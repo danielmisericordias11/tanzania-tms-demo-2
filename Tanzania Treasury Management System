@@ -1,0 +1,1442 @@
+<!Tanzania Treasury Management System >
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tanzania Treasury Management System — Finastra-Grade FX Dealing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bg: { primary: '#07090d', surface: '#0f1117', elevated: '#161922', border: '#1e2130' },
+                        accent: { green: '#00e5a0', gold: '#f0b90b', blue: '#3b82f6', red: '#ef4444', purple: '#8b5cf6' },
+                        text: { primary: '#f0f0f5', secondary: '#8b8f9e', muted: '#4a4e5e' }
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg-primary: #07090d; --bg-surface: #0f1117; --bg-elevated: #161922; --border: #1e2130;
+            --accent-green: #00e5a0; --accent-gold: #f0b90b; --accent-blue: #3b82f6; --accent-red: #ef4444;
+            --text-primary: #f0f0f5; --text-secondary: #8b8f9e;
+        }
+        * { scrollbar-width: thin; scrollbar-color: #1e2130 #07090d; box-sizing: border-box; }
+        *::-webkit-scrollbar { width: 5px; } *::-webkit-scrollbar-track { background: #07090d; } *::-webkit-scrollbar-thumb { background: #1e2130; border-radius: 3px; }
+        body { background: var(--bg-primary); color: var(--text-primary); font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+        .glass { background: rgba(22, 25, 34, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(30, 33, 48, 0.6); }
+        .glow-green { box-shadow: 0 0 20px rgba(0, 229, 160, 0.08); } .glow-red { box-shadow: 0 0 20px rgba(239, 68, 68, 0.08); }
+        .glow-gold { box-shadow: 0 0 20px rgba(240, 185, 11, 0.08); } .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.08); }
+        .scanline { position: relative; overflow: hidden; }
+        .scanline::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, var(--accent-green), transparent); animation: scan 3s linear infinite; opacity: 0.3; }
+        @keyframes scan { 0% { left: -100%; } 100% { left: 100%; } }
+        .pulse-dot { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .metric-card { transition: all 0.3s ease; position: relative; overflow: hidden; }
+        .metric-card:hover { transform: translateY(-2px); border-color: rgba(0, 229, 160, 0.3); }
+        .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent-color, var(--accent-green)), transparent); opacity: 0; transition: opacity 0.3s; }
+        .metric-card:hover::before { opacity: 1; }
+        .deal-row { transition: background 0.15s; cursor: pointer; }
+        .deal-row:hover { background: rgba(30, 33, 48, 0.6); }
+        .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+        .btn-primary { background: linear-gradient(135deg, rgba(0,229,160,0.15), rgba(59,130,246,0.15)); border: 1px solid rgba(0,229,160,0.3); color: var(--accent-green); transition: all 0.2s; }
+        .btn-primary:hover { background: linear-gradient(135deg, rgba(0,229,160,0.25), rgba(59,130,246,0.25)); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,229,160,0.15); }
+        .btn-danger { background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05)); border: 1px solid rgba(239,68,68,0.3); color: var(--accent-red); }
+        .btn-danger:hover { background: linear-gradient(135deg, rgba(239,68,68,0.25), rgba(239,68,68,0.1)); }
+        .input-dark { background: rgba(7, 9, 13, 0.6); border: 1px solid #1e2130; color: var(--text-primary); transition: all 0.2s; }
+        .input-dark:focus { outline: none; border-color: var(--accent-green); box-shadow: 0 0 0 3px rgba(0, 229, 160, 0.1); }
+        .grid-bg { background-color: var(--bg-primary); background-image: linear-gradient(rgba(30,33,48,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(30,33,48,0.15) 1px, transparent 1px); background-size: 40px 40px; }
+        .toast { animation: slideIn 0.3s ease, fadeOut 0.3s ease 3.2s forwards; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateX(100%); } }
+        .tab-active { background: linear-gradient(135deg, rgba(0,229,160,0.12), rgba(59,130,246,0.12)); border-left: 2px solid var(--accent-green); color: var(--text-primary); }
+        .hide { display: none !important; }
+        .rate-up { color: var(--accent-green); } .rate-down { color: var(--accent-red); }
+        .pnl-positive { color: var(--accent-green); } .pnl-negative { color: var(--accent-red); }
+    </style>
+</head>
+<body class="grid-bg h-screen w-screen">
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary">
+    <div class="w-full max-w-md px-6">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center">
+                <i class="fas fa-university text-white text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight">Tanzania Treasury Management</h1>
+            <p class="text-sm text-text-secondary mt-1">Bank of Tanzania Regulated | ISO 27001 Certified</p>
+        </div>
+        <div class="glass rounded-2xl p-6 space-y-4">
+            <div>
+                <label class="text-xs font-medium text-text-secondary uppercase tracking-wider">Select Role</label>
+                <select id="loginRole" class="input-dark w-full mt-1.5 px-3 py-2.5 rounded-lg text-sm">
+                    <option value="dealer">Front Office Dealer</option>
+                    <option value="manager">Dealer Manager</option>
+                    <option value="backoffice">Back Office Operator</option>
+                    <option value="risk">Risk Manager</option>
+                    <option value="compliance">Compliance Officer</option>
+                    <option value="cio">Treasury CIO</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-text-secondary uppercase tracking-wider">Username</label>
+                <input type="text" id="loginUser" value="demo.dealer" class="input-dark w-full mt-1.5 px-3 py-2.5 rounded-lg text-sm" placeholder="Enter username">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-text-secondary uppercase tracking-wider">Password</label>
+                <input type="password" id="loginPass" value="demo123" class="input-dark w-full mt-1.5 px-3 py-2.5 rounded-lg text-sm" placeholder="Enter password">
+            </div>
+            <div class="flex items-center gap-2 text-xs text-text-secondary">
+                <i class="fas fa-shield-alt text-accent-green"></i>
+                <span>Demo Mode — No MFA required for prototype</span>
+            </div>
+            <button onclick="doLogin()" class="btn-primary w-full py-3 rounded-lg font-semibold text-sm">
+                <i class="fas fa-sign-in-alt mr-2"></i>Authenticate & Enter Dealing Room
+            </button>
+            <div class="text-center text-xs text-text-muted pt-2">
+                <p>Demo credentials: demo.dealer / demo123</p>
+                <p class="mt-1">All roles use same password for prototype</p>
+            </div>
+        </div>
+        <div class="mt-6 text-center text-xs text-text-muted space-y-1">
+            <p>© 2025 Bank of Tanzania Regulated Institution</p>
+            <p>ISO 27001 | PCI DSS v4.0.1 | SOC 2 | OWASP ASVS L3</p>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" class="hide h-screen flex flex-col">
+    <!-- Top Bar -->
+    <header class="h-14 glass border-b border-bg-border flex items-center justify-between px-4 shrink-0 z-40">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center">
+                <i class="fas fa-university text-white text-xs"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-sm tracking-tight">TANZANIA TREASURY SYSTEM</h1>
+                <p class="text-[10px] text-text-secondary font-mono">FX Spot · Forward · Swap · MM · NDF</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="hidden md:flex items-center gap-2 text-xs text-text-secondary">
+                <span class="pulse-dot w-1.5 h-1.5 rounded-full bg-accent-green"></span>
+                <span class="font-mono">LIVE FEED</span>
+                <span class="text-text-muted">|</span>
+                <span class="font-mono" id="clock">--:--:--</span>
+                <span class="text-text-muted">|</span>
+                <span class="font-mono text-accent-green">CBR 5.75%</span>
+            </div>
+            <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-bg-surface border border-bg-border">
+                <img src="https://flagcdn.com/w20/tz.png" alt="TZ" class="w-4 h-3 rounded-sm object-cover">
+                <span class="text-xs font-medium">TZS</span>
+            </div>
+            <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-bg-surface border border-bg-border">
+                <i class="fas fa-user-circle text-text-secondary"></i>
+                <span class="text-xs font-medium" id="userName">Dealer</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-accent-green/10 text-accent-green font-mono" id="userRole">DEALER</span>
+            </div>
+            <button onclick="doLogout()" class="p-1.5 rounded-lg hover:bg-bg-elevated text-text-secondary hover:text-accent-red transition">
+                <i class="fas fa-power-off text-xs"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-60 glass border-r border-bg-border flex flex-col shrink-0 overflow-y-auto">
+            <div class="p-3 space-y-1">
+                <p class="text-[10px] font-semibold text-text-muted uppercase tracking-wider px-2 mb-2">Dealing Room</p>
+                <button onclick="switchView('dashboard')" id="nav-dashboard" class="tab-active w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition">
+                    <i class="fas fa-chart-line w-4 text-center"></i>Dealer Dashboard
+                </button>
+                <button onclick="switchView('ticket')" id="nav-ticket" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-text-secondary hover:bg-bg-elevated transition">
+                    <i class="fas fa-ticket-alt w-4 text-center"></i>Deal Ticket
+                </button>
+                <button onclick="switchView('blotter')" id="nav-blotter" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-text-secondary hover:bg-bg-elevated transition">
+                    <i class="fas fa-list w-4 text-center"></i>Deal Blotter
+                </button>
+                <button onclick="switchView('positions')" id="nav-positions" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-text-secondary hover:bg-bg-elevated transition">
+                    <i class="fas fa-balance-scale w-4 text-center"></i>Positions & P&L
+                </button>
+                
+                <p class="text-[10px] font-semibold text-text-muted uppercase tracking-wider px-2 mb-2 mt-4">Back Office</p>
+                <button onclick="switchView('rates')" id="nav-rates" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-text-secondary hover:bg-bg-elevated transition">
+                    <i class="fas fa-coins w-4 text-center"></i>Rate Board
+                </button>
+                <button onclick="switchView('confirmations')" id="nav-confirmations" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-text-secondary hover:bg-bg-elevated transition">
+                    <i class="fas fa-check-double w-4 text-center"></i>Confirmations
+                </button>
+                <button onclick="switchView('revaluation')" id="nav-revaluation" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-text-secondary hover:bg-bg-elevated transition">
+                    <i class="fas fa-calculator w-4 text-center"></i>EOD Revaluation
+                </button>
+                
+                <p class="text-[10px] font-semibold text-text-muted uppercase tracking-wider px-2 mb-2 mt-4">Risk & Compliance</p>
+                <button onclick="switchView('limits')" id="nav-limits" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-text-secondary hover:bg-bg-elevated transition">
+                    <i class="fas fa-shield-alt w-4 text-center"></i>Limit Monitor
+                </button>
+                <button onclick="switchView('audit')" id="nav-audit" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-text-secondary hover:bg-bg-elevated transition">
+                    <i class="fas fa-history w-4 text-center"></i>Audit Trail
+                </button>
+            </div>
+            <div class="mt-auto p-3">
+                <div class="p-3 rounded-xl bg-gradient-to-br from-emerald-900/20 to-blue-900/20 border border-emerald-900/20">
+                    <p class="text-[10px] font-semibold text-accent-green mb-1">System Status</p>
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-text-secondary">Reuters Feed</span>
+                            <span class="flex items-center gap-1 text-accent-green"><span class="w-1 h-1 rounded-full bg-accent-green pulse-dot"></span>Online</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-text-secondary">SWIFT Gateway</span>
+                            <span class="flex items-center gap-1 text-accent-green"><span class="w-1 h-1 rounded-full bg-accent-green"></span>Active</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-text-secondary">TIPS Link</span>
+                            <span class="flex items-center gap-1 text-accent-gold"><span class="w-1 h-1 rounded-full bg-accent-gold"></span>Standby</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-4" id="mainContent">
+            
+            <!-- DASHBOARD VIEW -->
+            <div id="view-dashboard" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div class="metric-card glass rounded-xl p-4 glow-green" style="--accent-color: var(--accent-green);">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-semibold text-text-muted uppercase">CBR (Policy Rate)</span>
+                            <span class="status-pill bg-emerald-900/30 text-accent-green border border-emerald-900/30">Active</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-2xl font-bold font-mono">5.75%</span>
+                            <span class="text-xs text-accent-green"><i class="fas fa-arrow-down"></i> -0.25pp</span>
+                        </div>
+                        <p class="text-[10px] text-text-muted mt-1">Corridor: 3.75% - 7.75%</p>
+                    </div>
+                    <div class="metric-card glass rounded-xl p-4 glow-blue" style="--accent-color: var(--accent-blue);">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-semibold text-text-muted uppercase">7-Day Interbank</span>
+                            <span class="status-pill bg-blue-900/30 text-accent-blue border border-blue-900/30">Stable</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-2xl font-bold font-mono">5.82%</span>
+                            <span class="text-xs text-text-secondary">within corridor</span>
+                        </div>
+                        <p class="text-[10px] text-text-muted mt-1">Volume: TZS 402.2B</p>
+                    </div>
+                    <div class="metric-card glass rounded-xl p-4 glow-gold" style="--accent-color: var(--accent-gold);">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-semibold text-text-muted uppercase">Today's P&L</span>
+                            <span class="status-pill bg-amber-900/30 text-accent-gold border border-amber-900/30">+TZS 12.4M</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-2xl font-bold font-mono text-accent-green">+TZS 12.4M</span>
+                        </div>
+                        <p class="text-[10px] text-text-muted mt-1">Spread: 8.2M | MTM: 4.2M</p>
+                    </div>
+                    <div class="metric-card glass rounded-xl p-4 glow-red" style="--accent-color: var(--accent-red);">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-semibold text-text-muted uppercase">Open Position</span>
+                            <span class="status-pill bg-red-900/30 text-accent-red border border-red-900/30">USD Long</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-2xl font-bold font-mono">+$2.45M</span>
+                            <span class="text-xs text-text-secondary">equiv TZS 6.5B</span>
+                        </div>
+                        <p class="text-[10px] text-text-muted mt-1">MTM: +TZS 4.2M unrealized</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    <div class="lg:col-span-2 glass rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-semibold text-sm">Live Rate Board</h3>
+                            <span class="text-[10px] text-text-muted">Source: Reuters Dealing 3000</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs">
+                                <thead>
+                                    <tr class="text-text-muted border-b border-bg-border">
+                                        <th class="text-left py-2 px-2">Pair</th>
+                                        <th class="text-right py-2 px-2">Bid</th>
+                                        <th class="text-right py-2 px-2">Mid</th>
+                                        <th class="text-right py-2 px-2">Ask</th>
+                                        <th class="text-right py-2 px-2">Spread</th>
+                                        <th class="text-right py-2 px-2">Change</th>
+                                        <th class="text-center py-2 px-2">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rateTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="glass rounded-xl p-4">
+                        <h3 class="font-semibold text-sm mb-3">Quick Deal Ticket</h3>
+                        <div class="space-y-2.5">
+                            <div>
+                                <label class="text-[10px] text-text-muted uppercase">Type</label>
+                                <select id="quickType" class="input-dark w-full mt-1 px-2 py-1.5 rounded text-xs">
+                                    <option value="spot">FX Spot</option>
+                                    <option value="forward">FX Forward</option>
+                                    <option value="swap">FX Swap</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-text-muted uppercase">Pair</label>
+                                    <select id="quickPair" class="input-dark w-full mt-1 px-2 py-1.5 rounded text-xs">
+                                        <option value="USD/TZS">USD/TZS</option>
+                                        <option value="EUR/TZS">EUR/TZS</option>
+                                        <option value="GBP/TZS">GBP/TZS</option>
+                                        <option value="KES/TZS">KES/TZS</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-text-muted uppercase">Direction</label>
+                                    <select id="quickDir" class="input-dark w-full mt-1 px-2 py-1.5 rounded text-xs">
+                                        <option value="BUY">BUY (Bank Buys)</option>
+                                        <option value="SELL">SELL (Bank Sells)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-text-muted uppercase">Amount (FCY)</label>
+                                <input type="number" id="quickAmount" value="100000" class="input-dark w-full mt-1 px-2 py-1.5 rounded text-xs font-mono" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-text-muted uppercase">Deal Rate</label>
+                                <input type="number" id="quickRate" value="2645.00" step="0.01" class="input-dark w-full mt-1 px-2 py-1.5 rounded text-xs font-mono" placeholder="0.00">
+                            </div>
+                            <div class="flex items-center justify-between text-xs py-1.5 px-2 rounded bg-bg-surface">
+                                <span class="text-text-muted">Spread Income:</span>
+                                <span class="font-mono font-semibold" id="quickSpread">TZS 0.00</span>
+                            </div>
+                            <button onclick="bookQuickDeal()" class="btn-primary w-full py-2 rounded-lg text-xs font-semibold">
+                                <i class="fas fa-paper-plane mr-1"></i>Book Deal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-sm">Recent Deals</h3>
+                        <button onclick="switchView('blotter')" class="text-xs text-accent-blue hover:underline">View All</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-text-muted border-b border-bg-border">
+                                    <th class="text-left py-2 px-2">ID</th>
+                                    <th class="text-left py-2 px-2">Type</th>
+                                    <th class="text-left py-2 px-2">Pair</th>
+                                    <th class="text-left py-2 px-2">Dir</th>
+                                    <th class="text-right py-2 px-2">Amount</th>
+                                    <th class="text-right py-2 px-2">Rate</th>
+                                    <th class="text-right py-2 px-2">Spread</th>
+                                    <th class="text-left py-2 px-2">Status</th>
+                                    <th class="text-left py-2 px-2">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentDealsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DEAL TICKET VIEW -->
+            <div id="view-ticket" class="hide max-w-3xl mx-auto">
+                <div class="glass rounded-xl p-5 scanline">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold">Deal Ticket</h2>
+                        <span class="text-xs text-text-muted">Four-Eyes Required for > TZS 500M</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-[10px] font-semibold text-text-muted uppercase">Deal Type</label>
+                                <select id="ticketType" class="input-dark w-full mt-1 px-3 py-2 rounded-lg text-sm">
+                                    <option value="spot">FX Spot (T+2)</option>
+                                    <option value="forward">FX Forward (>T+2)</option>
+                                    <option value="swap">FX Swap (Near + Far)</option>
+                                    <option value="nfd">NDF (Non-Deliverable)</option>
+                                    <option value="mm_deposit">MM Deposit</option>
+                                    <option value="mm_lending">MM Lending</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] font-semibold text-text-muted uppercase">Currency Pair</label>
+                                    <select id="ticketPair" class="input-dark w-full mt-1 px-3 py-2 rounded-lg text-sm">
+                                        <option value="USD/TZS">USD/TZS</option>
+                                        <option value="EUR/TZS">EUR/TZS</option>
+                                        <option value="GBP/TZS">GBP/TZS</option>
+                                        <option value="KES/TZS">KES/TZS</option>
+                                        <option value="ZAR/TZS">ZAR/TZS</option>
+                                        <option value="AED/TZS">AED/TZS</option>
+                                        <option value="INR/TZS">INR/TZS</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-semibold text-text-muted uppercase">Direction</label>
+                                    <select id="ticketDir" class="input-dark w-full mt-1 px-3 py-2 rounded-lg text-sm">
+                                        <option value="BUY">BUY (Bank Buys FCY)</option>
+                                        <option value="SELL">SELL (Bank Sells FCY)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-semibold text-text-muted uppercase">Amount (Foreign Currency)</label>
+                                <input type="number" id="ticketAmount" value="500000" step="1000" class="input-dark w-full mt-1 px-3 py-2 rounded-lg text-sm font-mono" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-semibold text-text-muted uppercase">Deal Rate</label>
+                                <div class="flex gap-2 mt-1">
+                                    <input type="number" id="ticketRate" value="2645.00" step="0.01" class="input-dark flex-1 px-3 py-2 rounded-lg text-sm font-mono" placeholder="0.00">
+                                    <button onclick="fillMidRate()" class="px-3 py-2 rounded-lg bg-bg-surface border border-bg-border text-xs text-text-secondary hover:text-accent-green transition">Use Mid</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] font-semibold text-text-muted uppercase">Trade Date</label>
+                                    <input type="date" id="ticketTradeDate" class="input-dark w-full mt-1 px-3 py-2 rounded-lg text-sm font-mono">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-semibold text-text-muted uppercase">Value Date</label>
+                                    <input type="date" id="ticketValueDate" class="input-dark w-full mt-1 px-3 py-2 rounded-lg text-sm font-mono">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-[10px] font-semibold text-text-muted uppercase">Counterparty</label>
+                                <select id="ticketCounterparty" class="input-dark w-full mt-1 px-3 py-2 rounded-lg text-sm">
+                                    <option value="CRDB Bank">CRDB Bank</option>
+                                    <option value="NMB Bank">NMB Bank</option>
+                                    <option value="Stanbic Bank">Stanbic Bank</option>
+                                    <option value="Diamond Trust">Diamond Trust</option>
+                                    <option value="Mkombozi Commercial">Mkombozi Commercial</option>
+                                    <option value="Exim Bank">Exim Bank</option>
+                                    <option value="KCB Bank">KCB Bank</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-semibold text-text-muted uppercase">Purpose Code (UFCR 2025)</label>
+                                <select id="ticketPurpose" class="input-dark w-full mt-1 px-3 py-2 rounded-lg text-sm">
+                                    <option value="IMPORT_TRADE">IMPORT_TRADE — Goods Import</option>
+                                    <option value="EXPORT_TRADE">EXPORT_TRADE — Export Receivables</option>
+                                    <option value="FOREX_LOAN">FOREX_LOAN — Foreign Currency Loan</option>
+                                    <option value="INTERBANK">INTERBANK — Interbank Placement</option>
+                                    <option value="EMBASSY_TXN">EMBASSY_TXN — Embassy Transaction</option>
+                                    <option value="DUTY_FREE">DUTY_FREE — Duty-Free Shop</option>
+                                    <option value="REGIONAL_ORG">REGIONAL_ORG — EAC/SADC/AU</option>
+                                    <option value="CAPITAL_INVEST">CAPITAL_INVEST — FDI (BoT Approval)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-semibold text-text-muted uppercase">Notes / Purpose</label>
+                                <textarea id="ticketNotes" rows="2" class="input-dark w-full mt-1 px-3 py-2 rounded-lg text-sm" placeholder="Enter deal purpose or notes..."></textarea>
+                            </div>
+                            <div class="p-3 rounded-lg bg-bg-surface border border-bg-border space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-text-muted">Mid Rate:</span>
+                                    <span class="font-mono" id="previewMid">2645.00</span>
+                                </div>
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-text-muted">Spread per Unit:</span>
+                                    <span class="font-mono" id="previewSpreadUnit">0.00</span>
+                                </div>
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-text-muted">Spread Income:</span>
+                                    <span class="font-mono font-semibold" id="previewSpreadIncome">TZS 0.00</span>
+                                </div>
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-text-muted">TZS Equivalent:</span>
+                                    <span class="font-mono font-semibold" id="previewTZS">TZS 0.00</span>
+                                </div>
+                                <div class="h-px bg-bg-border my-1"></div>
+                                <div class="flex justify-between text-sm font-semibold">
+                                    <span class="text-text-secondary">Total P&L Impact:</span>
+                                    <span class="font-mono text-accent-green" id="previewTotal">TZS 0.00</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="bookTicketDeal()" class="btn-primary flex-1 py-2.5 rounded-lg text-sm font-semibold">
+                                    <i class="fas fa-check mr-1"></i>Book Deal
+                                </button>
+                                <button onclick="resetTicket()" class="btn-danger flex-1 py-2.5 rounded-lg text-sm font-semibold">
+                                    <i class="fas fa-times mr-1"></i>Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOTTER VIEW -->
+            <div id="view-blotter" class="hide space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold">Deal Blotter</h2>
+                    <div class="flex items-center gap-2">
+                        <select id="blotterFilter" class="input-dark px-3 py-1.5 rounded-lg text-xs" onchange="renderBlotter()">
+                            <option value="all">All Status</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="CONFIRMED">Confirmed</option>
+                            <option value="SETTLED">Settled</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                        <button onclick="exportBlotter()" class="px-3 py-1.5 rounded-lg bg-bg-surface border border-bg-border text-xs text-text-secondary hover:text-accent-green transition">
+                            <i class="fas fa-download mr-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+                <div class="glass rounded-xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-text-muted border-b border-bg-border bg-bg-surface/50">
+                                    <th class="text-left py-2.5 px-3 font-medium">Deal ID</th>
+                                    <th class="text-left py-2.5 px-3 font-medium">Type</th>
+                                    <th class="text-left py-2.5 px-3 font-medium">Pair</th>
+                                    <th class="text-left py-2.5 px-3 font-medium">Dir</th>
+                                    <th class="text-right py-2.5 px-3 font-medium">Amount</th>
+                                    <th class="text-right py-2.5 px-3 font-medium">Deal Rate</th>
+                                    <th class="text-right py-2.5 px-3 font-medium">Mid at Book</th>
+                                    <th class="text-right py-2.5 px-3 font-medium">Spread</th>
+                                    <th class="text-left py-2.5 px-3 font-medium">Counterparty</th>
+                                    <th class="text-left py-2.5 px-3 font-medium">Dealer</th>
+                                    <th class="text-left py-2.5 px-3 font-medium">Status</th>
+                                    <th class="text-left py-2.5 px-3 font-medium">Trade Date</th>
+                                    <th class="text-left py-2.5 px-3 font-medium">Value Date</th>
+                                    <th class="text-center py-2.5 px-3 font-medium">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="blotterBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- POSITIONS VIEW -->
+            <div id="view-positions" class="hide space-y-4">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    <div class="glass rounded-xl p-4 glow-green" style="--accent-color: var(--accent-green);">
+                        <p class="text-[10px] font-semibold text-text-muted uppercase mb-2">Total Spread Income (Realized)</p>
+                        <p class="text-2xl font-bold font-mono text-accent-green" id="totalSpread">TZS 0.00</p>
+                        <p class="text-[10px] text-text-muted mt-1">From all booked deals</p>
+                    </div>
+                    <div class="glass rounded-xl p-4 glow-blue" style="--accent-color: var(--accent-blue);">
+                        <p class="text-[10px] font-semibold text-text-muted uppercase mb-2">Total MTM (Unrealized)</p>
+                        <p class="text-2xl font-bold font-mono text-accent-blue" id="totalMTM">TZS 0.00</p>
+                        <p class="text-[10px] text-text-muted mt-1">Mark-to-market on open positions</p>
+                    </div>
+                    <div class="glass rounded-xl p-4 glow-gold" style="--accent-color: var(--accent-gold);">
+                        <p class="text-[10px] font-semibold text-text-muted uppercase mb-2">Grand Total P&L</p>
+                        <p class="text-2xl font-bold font-mono" id="grandTotal">TZS 0.00</p>
+                        <p class="text-[10px] text-text-muted mt-1">Spread + MTM + Realized</p>
+                    </div>
+                </div>
+                <div class="glass rounded-xl p-4">
+                    <h3 class="font-semibold text-sm mb-3">Net Open Positions</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-text-muted border-b border-bg-border">
+                                    <th class="text-left py-2 px-3">Currency</th>
+                                    <th class="text-right py-2 px-3">Net Position</th>
+                                    <th class="text-right py-2 px-3">TZS Equivalent</th>
+                                    <th class="text-right py-2 px-3">Mid Rate</th>
+                                    <th class="text-right py-2 px-3">MTM P&L</th>
+                                    <th class="text-left py-2 px-3">Stance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="positionsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="glass rounded-xl p-4">
+                    <h3 class="font-semibold text-sm mb-3">P&L Attribution by Currency Pair</h3>
+                    <div class="h-64"><canvas id="pnlChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- RATE BOARD VIEW -->
+            <div id="view-rates" class="hide space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold">Rate Board — Back Office</h2>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-text-muted">Source:</span>
+                        <select id="rateSource" class="input-dark px-3 py-1.5 rounded-lg text-xs">
+                            <option value="reuters">Reuters Dealing 3000</option>
+                            <option value="bloomberg">Bloomberg BFIX</option>
+                            <option value="bot">Bank of Tanzania</option>
+                            <option value="manual">Manual Entry</option>
+                        </select>
+                        <button onclick="publishRates()" class="btn-primary px-4 py-1.5 rounded-lg text-xs font-semibold">
+                            <i class="fas fa-upload mr-1"></i>Publish Rates
+                        </button>
+                    </div>
+                </div>
+                <div class="glass rounded-xl p-4">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-text-muted border-b border-bg-border">
+                                    <th class="text-left py-2 px-3">Currency Pair</th>
+                                    <th class="text-right py-2 px-3">Bid</th>
+                                    <th class="text-right py-2 px-3">Mid</th>
+                                    <th class="text-right py-2 px-3">Ask</th>
+                                    <th class="text-right py-2 px-3">Spread (bp)</th>
+                                    <th class="text-right py-2 px-3">Dealer Bid</th>
+                                    <th class="text-right py-2 px-3">Dealer Ask</th>
+                                    <th class="text-right py-2 px-3">Retail Bid</th>
+                                    <th class="text-right py-2 px-3">Retail Ask</th>
+                                    <th class="text-center py-2 px-3">Last Updated</th>
+                                    <th class="text-center py-2 px-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rateBoardBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="glass rounded-xl p-4">
+                    <h3 class="font-semibold text-sm mb-3">Rate History — USD/TZS</h3>
+                    <div class="h-56"><canvas id="rateHistoryChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- CONFIRMATIONS VIEW -->
+            <div id="view-confirmations" class="hide space-y-4">
+                <h2 class="text-lg font-bold">Confirmation Queue</h2>
+                <div class="glass rounded-xl p-4">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-text-muted border-b border-bg-border">
+                                    <th class="text-left py-2 px-3">Deal ID</th>
+                                    <th class="text-left py-2 px-3">Type</th>
+                                    <th class="text-left py-2 px-3">Counterparty</th>
+                                    <th class="text-left py-2 px-3">SWIFT Ref</th>
+                                    <th class="text-left py-2 px-3">Status</th>
+                                    <th class="text-left py-2 px-3">Sent</th>
+                                    <th class="text-left py-2 px-3">Ack</th>
+                                    <th class="text-center py-2 px-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="confirmationsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REVALUATION VIEW -->
+            <div id="view-revaluation" class="hide space-y-4 max-w-2xl mx-auto">
+                <div class="glass rounded-xl p-5 scanline">
+                    <h2 class="text-lg font-bold mb-4">EOD Revaluation Run</h2>
+                    <div class="space-y-4">
+                        <div class="p-3 rounded-lg bg-bg-surface border border-bg-border">
+                            <p class="text-xs text-text-secondary mb-2">Revaluation will:</p>
+                            <ul class="text-xs text-text-muted space-y-1 list-disc list-inside">
+                                <li>Mark all open positions to current mid rates</li>
+                                <li>Calculate MTM P&L for all CONFIRMED deals</li>
+                                <li>Generate GL entries (Dr/Cr FX Position ↔ MTM Income/Expense)</li>
+                                <li>Update position valuations</li>
+                                <li>Log all changes to immutable audit trail</li>
+                            </ul>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="p-3 rounded-lg bg-bg-surface border border-bg-border text-center">
+                                <p class="text-2xl font-bold font-mono text-accent-blue" id="revOpenDeals">0</p>
+                                <p class="text-[10px] text-text-muted mt-1">Open Deals</p>
+                            </div>
+                            <div class="p-3 rounded-lg bg-bg-surface border border-bg-border text-center">
+                                <p class="text-2xl font-bold font-mono text-accent-gold" id="revTotalMTM">TZS 0.00</p>
+                                <p class="text-[10px] text-text-muted mt-1">Total MTM Impact</p>
+                            </div>
+                        </div>
+                        <button onclick="runRevaluation()" class="btn-primary w-full py-3 rounded-lg text-sm font-semibold">
+                            <i class="fas fa-play mr-2"></i>Run EOD Revaluation
+                        </button>
+                        <div id="revResult" class="hide p-3 rounded-lg bg-emerald-900/20 border border-emerald-900/30">
+                            <p class="text-xs text-accent-green font-semibold mb-1"><i class="fas fa-check-circle mr-1"></i>Revaluation Complete</p>
+                            <p class="text-xs text-text-muted" id="revDetail">GL entries posted. Audit trail updated.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LIMITS VIEW -->
+            <div id="view-limits" class="hide space-y-4">
+                <h2 class="text-lg font-bold">Limit Monitor</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="glass rounded-xl p-4">
+                        <h3 class="font-semibold text-sm mb-3">Dealer Limits</h3>
+                        <div class="space-y-3" id="dealerLimits"></div>
+                    </div>
+                    <div class="glass rounded-xl p-4">
+                        <h3 class="font-semibold text-sm mb-3">Counterparty Credit Limits</h3>
+                        <div class="space-y-3" id="cpLimits"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUDIT VIEW -->
+            <div id="view-audit" class="hide space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold">Immutable Audit Trail</h2>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-text-muted">Hash chain verified</span>
+                        <i class="fas fa-lock text-accent-green text-xs"></i>
+                    </div>
+                </div>
+                <div class="glass rounded-xl p-4">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-text-muted border-b border-bg-border">
+                                    <th class="text-left py-2 px-3">Timestamp</th>
+                                    <th class="text-left py-2 px-3">User</th>
+                                    <th class="text-left py-2 px-3">Action</th>
+                                    <th class="text-left py-2 px-3">Deal ID</th>
+                                    <th class="text-left py-2 px-3">Details</th>
+                                    <th class="text-left py-2 px-3">IP Address</th>
+                                    <th class="text-left py-2 px-3">Hash</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+<!-- Deal Detail Modal -->
+<div id="dealModal" class="hide fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="glass rounded-xl p-5 w-full max-w-lg mx-4">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-lg">Deal Detail</h3>
+            <button onclick="closeDealModal()" class="text-text-muted hover:text-text-primary"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="dealModalContent" class="space-y-3 text-xs"></div>
+        <div class="flex gap-2 mt-4" id="dealModalActions"></div>
+    </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+const state = {
+    currentUser: null,
+    currentRole: null,
+    currentView: 'dashboard',
+    rates: {
+        'USD/TZS': { bid: 2645.00, mid: 2648.50, ask: 2652.00, spread: 50, change: -12.50, status: 'live' },
+        'EUR/TZS': { bid: 2890.00, mid: 2895.00, ask: 2900.00, spread: 75, change: 8.20, status: 'live' },
+        'GBP/TZS': { bid: 3350.00, mid: 3360.00, ask: 3370.00, spread: 100, change: -5.00, status: 'live' },
+        'KES/TZS': { bid: 18.50, mid: 18.65, ask: 18.80, spread: 150, change: 0.05, status: 'live' },
+        'ZAR/TZS': { bid: 145.00, mid: 146.00, ask: 147.00, spread: 150, change: -1.20, status: 'live' },
+        'AED/TZS': { bid: 720.00, mid: 721.50, ask: 723.00, spread: 200, change: 2.00, status: 'live' },
+        'INR/TZS': { bid: 31.50, mid: 31.75, ask: 32.00, spread: 200, change: -0.10, status: 'live' }
+    },
+    dealerSpreads: { 'USD/TZS': 50, 'EUR/TZS': 75, 'GBP/TZS': 100, 'KES/TZS': 150, 'ZAR/TZS': 150, 'AED/TZS': 200, 'INR/TZS': 200 },
+    retailSpreads: { 'USD/TZS': 150, 'EUR/TZS': 200, 'GBP/TZS': 250, 'KES/TZS': 400, 'ZAR/TZS': 400, 'AED/TZS': 500, 'INR/TZS': 500 },
+    deals: [],
+    auditLog: [],
+    confirmations: [],
+    nextDealId: 1001,
+    charts: {}
+};
+
+// Seed deals
+function seedData() {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const vDate = new Date(now); vDate.setDate(vDate.getDate() + 2);
+    
+    const seedDeals = [
+        { id: 'TMS-20250622-001', type: 'spot', pair: 'USD/TZS', direction: 'BUY', amount: 500000, dealRate: 2645.00, midAtBook: 2648.50, counterparty: 'CRDB Bank', dealer: 'J. Mushi', status: 'SETTLED', tradeDate: today, valueDate: vDate.toISOString().split('T')[0], purpose: 'IMPORT_TRADE', notes: 'Coffee machinery import', spreadIncome: 1750000 },
+        { id: 'TMS-20250622-002', type: 'forward', pair: 'EUR/TZS', direction: 'SELL', amount: 250000, dealRate: 2905.00, midAtBook: 2895.00, counterparty: 'NMB Bank', dealer: 'A. Kimaro', status: 'CONFIRMED', tradeDate: today, valueDate: '2025-07-22', purpose: 'EXPORT_TRADE', notes: 'Tea export hedge', spreadIncome: 2500000 },
+        { id: 'TMS-20250622-003', type: 'spot', pair: 'USD/TZS', direction: 'SELL', amount: 1000000, dealRate: 2655.00, midAtBook: 2648.50, counterparty: 'Stanbic Bank', dealer: 'J. Mushi', status: 'PENDING', tradeDate: today, valueDate: vDate.toISOString().split('T')[0], purpose: 'INTERBANK', notes: 'Interbank placement', spreadIncome: 6500000 },
+        { id: 'TMS-20250622-004', type: 'mm_deposit', pair: 'TZS/USD', direction: 'BUY', amount: 2000000000, dealRate: 5.75, midAtBook: 5.75, counterparty: 'Diamond Trust', dealer: 'P. Ochieng', status: 'CONFIRMED', tradeDate: today, valueDate: vDate.toISOString().split('T')[0], purpose: 'INTERBANK', notes: '30-day MM deposit', spreadIncome: 0 },
+        { id: 'TMS-20250622-005', type: 'swap', pair: 'USD/TZS', direction: 'BUY', amount: 750000, dealRate: 2648.00, midAtBook: 2648.50, counterparty: 'KCB Bank', dealer: 'J. Mushi', status: 'SETTLED', tradeDate: today, valueDate: vDate.toISOString().split('T')[0], purpose: 'FOREX_LOAN', notes: 'Rolling hedge', spreadIncome: 375000 }
+    ];
+    state.deals = seedDeals;
+    
+    seedDeals.forEach(d => {
+        logAudit('DEAL_CREATED', d.id, `Deal booked by ${d.dealer}`);
+        if (d.status === 'CONFIRMED') logAudit('DEAL_CONFIRMED', d.id, 'Confirmed by Back Office');
+        if (d.status === 'SETTLED') {
+            logAudit('DEAL_CONFIRMED', d.id, 'Confirmed by Back Office');
+            logAudit('DEAL_SETTLED', d.id, 'Settled via Nostro reconciliation');
+        }
+    });
+}
+
+// ==================== AUTH ====================
+function doLogin() {
+    const role = document.getElementById('loginRole').value;
+    const user = document.getElementById('loginUser').value;
+    const pass = document.getElementById('loginPass').value;
+    
+    if (!user || !pass) { showToast('Enter username and password', 'error'); return; }
+    
+    state.currentUser = user;
+    state.currentRole = role;
+    
+    const roleNames = { dealer: 'Front Office Dealer', manager: 'Dealer Manager', backoffice: 'Back Office Operator', risk: 'Risk Manager', compliance: 'Compliance Officer', cio: 'Treasury CIO' };
+    const roleCodes = { dealer: 'DEALER', manager: 'MANAGER', backoffice: 'BACKOFFICE', risk: 'RISK', compliance: 'COMPLIANCE', cio: 'CIO' };
+    
+    document.getElementById('userName').textContent = user.split('.').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+    document.getElementById('userRole').textContent = roleCodes[role];
+    
+    document.getElementById('loginScreen').classList.add('hide');
+    document.getElementById('mainApp').classList.remove('hide');
+    
+    showToast(`Welcome, ${roleNames[role]}`, 'success');
+    logAudit('USER_LOGIN', null, `${user} logged in as ${roleNames[role]}`);
+    
+    seedData();
+    initClock();
+    renderAll();
+    startRateSimulation();
+}
+
+function doLogout() {
+    logAudit('USER_LOGOUT', null, `${state.currentUser} logged out`);
+    state.currentUser = null;
+    state.currentRole = null;
+    document.getElementById('mainApp').classList.add('hide');
+    document.getElementById('loginScreen').classList.remove('hide');
+    document.getElementById('loginPass').value = '';
+}
+
+// ==================== NAVIGATION ====================
+function switchView(view) {
+    document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hide'));
+    document.getElementById('view-' + view).classList.remove('hide');
+    
+    document.querySelectorAll('[id^="nav-"]').forEach(el => {
+        el.classList.remove('tab-active');
+        el.classList.add('text-text-secondary');
+    });
+    const nav = document.getElementById('nav-' + view);
+    if (nav) { nav.classList.add('tab-active'); nav.classList.remove('text-text-secondary'); }
+    
+    state.currentView = view;
+    
+    if (view === 'positions') setTimeout(renderPositions, 100);
+    if (view === 'rates') setTimeout(renderRateBoard, 100);
+    if (view === 'blotter') renderBlotter();
+    if (view === 'limits') renderLimits();
+    if (view === 'audit') renderAudit();
+    if (view === 'confirmations') renderConfirmations();
+    if (view === 'revaluation') renderRevaluation();
+}
+
+// ==================== RATES ====================
+function getMid(pair) { return state.rates[pair]?.mid || 0; }
+function getDealerRate(pair, direction) {
+    const r = state.rates[pair]; if (!r) return 0;
+    const spread = state.dealerSpreads[pair] || 50;
+    const spreadAmt = r.mid * (spread / 10000);
+    return direction === 'BUY' ? r.mid - spreadAmt : r.mid + spreadAmt;
+}
+
+function renderRateTable() {
+    const tbody = document.getElementById('rateTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = Object.entries(state.rates).map(([pair, r]) => {
+        const changeClass = r.change >= 0 ? 'rate-up' : 'rate-down';
+        const arrow = r.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+        const statusDot = r.status === 'live' ? 'bg-accent-green pulse-dot' : r.status === 'stale' ? 'bg-accent-gold' : 'bg-accent-red';
+        return `<tr class="deal-row border-b border-bg-border/50">
+            <td class="py-2 px-2 font-medium">${pair}</td>
+            <td class="py-2 px-2 text-right font-mono">${r.bid.toFixed(2)}</td>
+            <td class="py-2 px-2 text-right font-mono text-accent-blue">${r.mid.toFixed(2)}</td>
+            <td class="py-2 px-2 text-right font-mono">${r.ask.toFixed(2)}</td>
+            <td class="py-2 px-2 text-right font-mono text-text-muted">${r.spread}</td>
+            <td class="py-2 px-2 text-right font-mono ${changeClass}"><i class="fas ${arrow} text-[10px] mr-1"></i>${Math.abs(r.change).toFixed(2)}</td>
+            <td class="py-2 px-2 text-center"><span class="w-1.5 h-1.5 rounded-full ${statusDot} inline-block"></span></td>
+        </tr>`;
+    }).join('');
+}
+
+function renderRateBoard() {
+    const tbody = document.getElementById('rateBoardBody');
+    if (!tbody) return;
+    tbody.innerHTML = Object.entries(state.rates).map(([pair, r]) => {
+        const dBid = getDealerRate(pair, 'BUY');
+        const dAsk = getDealerRate(pair, 'SELL');
+        const rSpread = state.retailSpreads[pair] || 150;
+        const rSpreadAmt = r.mid * (rSpread / 10000);
+        const rBid = r.mid - rSpreadAmt;
+        const rAsk = r.mid + rSpreadAmt;
+        return `<tr class="deal-row border-b border-bg-border/50">
+            <td class="py-2 px-3 font-medium">${pair}</td>
+            <td class="py-2 px-3 text-right font-mono"><input type="number" value="${r.bid.toFixed(2)}" class="input-dark w-24 px-2 py-1 rounded text-right text-xs font-mono" onchange="updateRate('${pair}', 'bid', this.value)"></td>
+            <td class="py-2 px-3 text-right font-mono text-accent-blue"><input type="number" value="${r.mid.toFixed(2)}" class="input-dark w-24 px-2 py-1 rounded text-right text-xs font-mono" onchange="updateRate('${pair}', 'mid', this.value)"></td>
+            <td class="py-2 px-3 text-right font-mono"><input type="number" value="${r.ask.toFixed(2)}" class="input-dark w-24 px-2 py-1 rounded text-right text-xs font-mono" onchange="updateRate('${pair}', 'ask', this.value)"></td>
+            <td class="py-2 px-3 text-right font-mono text-text-muted">${r.spread}</td>
+            <td class="py-2 px-3 text-right font-mono text-accent-green">${dBid.toFixed(2)}</td>
+            <td class="py-2 px-3 text-right font-mono text-accent-red">${dAsk.toFixed(2)}</td>
+            <td class="py-2 px-3 text-right font-mono text-text-secondary">${rBid.toFixed(2)}</td>
+            <td class="py-2 px-3 text-right font-mono text-text-secondary">${rAsk.toFixed(2)}</td>
+            <td class="py-2 px-3 text-center text-text-muted">${new Date().toLocaleTimeString()}</td>
+            <td class="py-2 px-3 text-center"><button onclick="publishSingleRate('${pair}')" class="text-accent-green hover:text-white transition"><i class="fas fa-check"></i></button></td>
+        </tr>`;
+    }).join('');
+}
+
+function updateRate(pair, field, value) {
+    state.rates[pair][field] = parseFloat(value);
+    if (field === 'mid') {
+        state.rates[pair].bid = parseFloat(value) - (state.rates[pair].spread / 10000 * parseFloat(value));
+        state.rates[pair].ask = parseFloat(value) + (state.rates[pair].spread / 10000 * parseFloat(value));
+    }
+    showToast(`Updated ${pair} ${field} rate`, 'success');
+    logAudit('RATE_CHANGED', null, `Updated ${pair} ${field} to ${value}`);
+}
+
+function publishRates() {
+    showToast('All rates published to dealing room', 'success');
+    logAudit('RATES_PUBLISHED', null, 'Back office published rate board');
+}
+
+function publishSingleRate(pair) {
+    showToast(`${pair} rate published`, 'success');
+    logAudit('RATE_PUBLISHED', null, `Published ${pair} rate`);
+}
+
+// ==================== DEAL BOOKING ====================
+function calculateSpreadIncome(pair, direction, amount, dealRate, midRate) {
+    if (direction === 'BUY') return (midRate - dealRate) * amount;
+    return (dealRate - midRate) * amount;
+}
+
+function calculateMTM(deal) {
+    if (deal.status !== 'CONFIRMED' && deal.status !== 'PENDING') return 0;
+    const currentMid = getMid(deal.pair);
+    if (!currentMid) return 0;
+    if (deal.direction === 'BUY') return deal.amount * (currentMid - deal.midAtBook);
+    return -deal.amount * (currentMid - deal.midAtBook);
+}
+
+function updateTicketPreview() {
+    const pair = document.getElementById('ticketPair')?.value || 'USD/TZS';
+    const dir = document.getElementById('ticketDir')?.value || 'BUY';
+    const amount = parseFloat(document.getElementById('ticketAmount')?.value) || 0;
+    const dealRate = parseFloat(document.getElementById('ticketRate')?.value) || 0;
+    const mid = getMid(pair);
+    
+    document.getElementById('previewMid').textContent = mid.toFixed(2);
+    const spreadUnit = mid - dealRate;
+    document.getElementById('previewSpreadUnit').textContent = spreadUnit.toFixed(2);
+    const spreadIncome = calculateSpreadIncome(pair, dir, amount, dealRate, mid);
+    document.getElementById('previewSpreadIncome').textContent = 'TZS ' + formatNumber(spreadIncome);
+    document.getElementById('previewTZS').textContent = 'TZS ' + formatNumber(amount * dealRate);
+    document.getElementById('previewTotal').textContent = 'TZS ' + formatNumber(spreadIncome);
+    
+    const previewEl = document.getElementById('previewTotal');
+    if (spreadIncome < 0) { previewEl.classList.remove('text-accent-green'); previewEl.classList.add('text-accent-red'); }
+    else { previewEl.classList.remove('text-accent-red'); previewEl.classList.add('text-accent-green'); }
+}
+
+function fillMidRate() {
+    const pair = document.getElementById('ticketPair').value;
+    document.getElementById('ticketRate').value = getMid(pair).toFixed(2);
+    updateTicketPreview();
+}
+
+function bookTicketDeal() {
+    const pair = document.getElementById('ticketPair').value;
+    const dir = document.getElementById('ticketDir').value;
+    const amount = parseFloat(document.getElementById('ticketAmount').value);
+    const dealRate = parseFloat(document.getElementById('ticketRate').value);
+    const type = document.getElementById('ticketType').value;
+    const counterparty = document.getElementById('ticketCounterparty').value;
+    const purpose = document.getElementById('ticketPurpose').value;
+    const notes = document.getElementById('ticketNotes').value;
+    const tradeDate = document.getElementById('ticketTradeDate').value;
+    const valueDate = document.getElementById('ticketValueDate').value;
+    
+    if (!amount || !dealRate) { showToast('Enter amount and rate', 'error'); return; }
+    
+    const mid = getMid(pair);
+    const spreadIncome = calculateSpreadIncome(pair, dir, amount, dealRate, mid);
+    
+    if (spreadIncome < 0 && Math.abs(spreadIncome) > amount * 0.01) {
+        showToast('WARNING: Negative spread exceeds 1%. Manager approval required.', 'warning');
+    }
+    
+    const deal = {
+        id: `TMS-${tradeDate.replace(/-/g, '')}-${String(state.nextDealId++).padStart(3, '0')}`,
+        type, pair, direction: dir, amount, dealRate, midAtBook: mid,
+        counterparty, dealer: state.currentUser || 'System', status: 'PENDING',
+        tradeDate, valueDate, purpose, notes, spreadIncome,
+        createdAt: new Date().toISOString()
+    };
+    
+    state.deals.unshift(deal);
+    logAudit('DEAL_CREATED', deal.id, `Booked ${type} ${dir} ${amount} ${pair} @ ${dealRate}`);
+    showToast(`Deal ${deal.id} booked successfully`, 'success');
+    resetTicket();
+    renderAll();
+}
+
+function bookQuickDeal() {
+    const pair = document.getElementById('quickPair').value;
+    const dir = document.getElementById('quickDir').value;
+    const amount = parseFloat(document.getElementById('quickAmount').value);
+    const dealRate = parseFloat(document.getElementById('quickRate').value);
+    const type = document.getElementById('quickType').value;
+    const today = new Date().toISOString().split('T')[0];
+    const vDate = new Date(); vDate.setDate(vDate.getDate() + 2);
+    
+    if (!amount || !dealRate) { showToast('Enter amount and rate', 'error'); return; }
+    
+    const mid = getMid(pair);
+    const spreadIncome = calculateSpreadIncome(pair, dir, amount, dealRate, mid);
+    
+    const deal = {
+        id: `TMS-${today.replace(/-/g, '')}-${String(state.nextDealId++).padStart(3, '0')}`,
+        type, pair, direction: dir, amount, dealRate, midAtBook: mid,
+        counterparty: 'CRDB Bank', dealer: state.currentUser || 'System', status: 'PENDING',
+        tradeDate: today, valueDate: vDate.toISOString().split('T')[0], purpose: 'INTERBANK', notes: 'Quick deal',
+        spreadIncome, createdAt: new Date().toISOString()
+    };
+    
+    state.deals.unshift(deal);
+    logAudit('DEAL_CREATED', deal.id, `Quick booked ${type} ${dir} ${amount} ${pair}`);
+    showToast(`Deal ${deal.id} booked`, 'success');
+    renderAll();
+}
+
+function resetTicket() {
+    document.getElementById('ticketAmount').value = '500000';
+    document.getElementById('ticketRate').value = '2645.00';
+    document.getElementById('ticketNotes').value = '';
+    updateTicketPreview();
+}
+
+// ==================== BLOTTER ====================
+function renderBlotter() {
+    const filter = document.getElementById('blotterFilter')?.value || 'all';
+    const tbody = document.getElementById('blotterBody');
+    if (!tbody) return;
+    
+    let deals = state.deals;
+    if (filter !== 'all') deals = deals.filter(d => d.status === filter);
+    
+    tbody.innerHTML = deals.map(d => {
+        const statusColors = { PENDING: 'bg-amber-900/30 text-accent-gold border-amber-900/30', CONFIRMED: 'bg-blue-900/30 text-accent-blue border-blue-900/30', SETTLED: 'bg-emerald-900/30 text-accent-green border-emerald-900/30', CANCELLED: 'bg-red-900/30 text-accent-red border-red-900/30' };
+        const sc = statusColors[d.status] || statusColors.PENDING;
+        return `<tr class="deal-row border-b border-bg-border/50" onclick="showDealDetail('${d.id}')">
+            <td class="py-2 px-3 font-mono text-text-secondary">${d.id}</td>
+            <td class="py-2 px-3"><span class="text-[10px] px-1.5 py-0.5 rounded bg-bg-surface border border-bg-border">${d.type.toUpperCase()}</span></td>
+            <td class="py-2 px-3 font-medium">${d.pair}</td>
+            <td class="py-2 px-3"><span class="${d.direction === 'BUY' ? 'text-accent-green' : 'text-accent-red'}">${d.direction}</span></td>
+            <td class="py-2 px-3 text-right font-mono">${formatNumber(d.amount)}</td>
+            <td class="py-2 px-3 text-right font-mono">${d.dealRate.toFixed(2)}</td>
+            <td class="py-2 px-3 text-right font-mono text-text-muted">${d.midAtBook.toFixed(2)}</td>
+            <td class="py-2 px-3 text-right font-mono ${d.spreadIncome >= 0 ? 'text-accent-green' : 'text-accent-red'}">TZS ${formatNumber(d.spreadIncome)}</td>
+            <td class="py-2 px-3">${d.counterparty}</td>
+            <td class="py-2 px-3">${d.dealer}</td>
+            <td class="py-2 px-3"><span class="status-pill ${sc}">${d.status}</span></td>
+            <td class="py-2 px-3 text-text-muted">${d.tradeDate}</td>
+            <td class="py-2 px-3 text-text-muted">${d.valueDate}</td>
+            <td class="py-2 px-3 text-center">
+                ${d.status === 'PENDING' ? `<button onclick="event.stopPropagation(); confirmDeal('${d.id}')" class="text-accent-green hover:text-white mr-2"><i class="fas fa-check"></i></button><button onclick="event.stopPropagation(); cancelDeal('${d.id}')" class="text-accent-red hover:text-white"><i class="fas fa-times"></i></button>` : 
+                  d.status === 'CONFIRMED' ? `<button onclick="event.stopPropagation(); settleDeal('${d.id}')" class="text-accent-blue hover:text-white"><i class="fas fa-check-double"></i></button>` : 
+                  `<span class="text-text-muted">-</span>`}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function renderRecentDeals() {
+    const tbody = document.getElementById('recentDealsBody');
+    if (!tbody) return;
+    const recent = state.deals.slice(0, 5);
+    tbody.innerHTML = recent.map(d => {
+        const statusColors = { PENDING: 'bg-amber-900/30 text-accent-gold', CONFIRMED: 'bg-blue-900/30 text-accent-blue', SETTLED: 'bg-emerald-900/30 text-accent-green', CANCELLED: 'bg-red-900/30 text-accent-red' };
+        return `<tr class="deal-row border-b border-bg-border/50" onclick="showDealDetail('${d.id}')">
+            <td class="py-2 px-2 font-mono text-text-secondary">${d.id}</td>
+            <td class="py-2 px-2"><span class="text-[10px] px-1.5 py-0.5 rounded bg-bg-surface border border-bg-border">${d.type.toUpperCase()}</span></td>
+            <td class="py-2 px-2">${d.pair}</td>
+            <td class="py-2 px-2 ${d.direction === 'BUY' ? 'text-accent-green' : 'text-accent-red'}">${d.direction}</td>
+            <td class="py-2 px-2 text-right font-mono">${formatNumber(d.amount)}</td>
+            <td class="py-2 px-2 text-right font-mono">${d.dealRate.toFixed(2)}</td>
+            <td class="py-2 px-2 text-right font-mono ${d.spreadIncome >= 0 ? 'text-accent-green' : 'text-accent-red'}">TZS ${formatNumber(d.spreadIncome)}</td>
+            <td class="py-2 px-2"><span class="status-pill ${statusColors[d.status]}">${d.status}</span></td>
+            <td class="py-2 px-2 text-text-muted">${d.tradeDate}</td>
+        </tr>`;
+    }).join('');
+}
+
+// ==================== DEAL ACTIONS ====================
+function confirmDeal(id) {
+    const d = state.deals.find(x => x.id === id);
+    if (!d) return;
+    d.status = 'CONFIRMED';
+    logAudit('DEAL_CONFIRMED', id, 'Confirmed by Back Office');
+    showToast(`Deal ${id} confirmed`, 'success');
+    renderAll();
+}
+
+function settleDeal(id) {
+    const d = state.deals.find(x => x.id === id);
+    if (!d) return;
+    d.status = 'SETTLED';
+    logAudit('DEAL_SETTLED', id, 'Settled via Nostro reconciliation');
+    showToast(`Deal ${id} settled`, 'success');
+    renderAll();
+}
+
+function cancelDeal(id) {
+    const d = state.deals.find(x => x.id === id);
+    if (!d) return;
+    d.status = 'CANCELLED';
+    logAudit('DEAL_CANCELLED', id, 'Cancelled by dealer/manager');
+    showToast(`Deal ${id} cancelled`, 'warning');
+    renderAll();
+}
+
+function showDealDetail(id) {
+    const d = state.deals.find(x => x.id === id);
+    if (!d) return;
+    const mtm = calculateMTM(d);
+    const content = document.getElementById('dealModalContent');
+    content.innerHTML = `
+        <div class="grid grid-cols-2 gap-2">
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Deal ID</p><p class="font-mono font-semibold">${d.id}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Status</p><p class="font-semibold ${d.status === 'SETTLED' ? 'text-accent-green' : d.status === 'CANCELLED' ? 'text-accent-red' : 'text-accent-gold'}">${d.status}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Type</p><p>${d.type.toUpperCase()}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Pair</p><p>${d.pair}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Direction</p><p class="${d.direction === 'BUY' ? 'text-accent-green' : 'text-accent-red'}">${d.direction}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Amount</p><p class="font-mono">${formatNumber(d.amount)}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Deal Rate</p><p class="font-mono">${d.dealRate.toFixed(2)}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Mid at Book</p><p class="font-mono text-text-muted">${d.midAtBook.toFixed(2)}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Spread Income</p><p class="font-mono ${d.spreadIncome >= 0 ? 'text-accent-green' : 'text-accent-red'}">TZS ${formatNumber(d.spreadIncome)}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Current MTM</p><p class="font-mono ${mtm >= 0 ? 'text-accent-green' : 'text-accent-red'}">TZS ${formatNumber(mtm)}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Counterparty</p><p>${d.counterparty}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Dealer</p><p>${d.dealer}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Trade Date</p><p>${d.tradeDate}</p></div>
+            <div class="p-2 rounded bg-bg-surface"><p class="text-text-muted text-[10px]">Value Date</p><p>${d.valueDate}</p></div>
+            <div class="p-2 rounded bg-bg-surface col-span-2"><p class="text-text-muted text-[10px]">Purpose</p><p>${d.purpose}</p></div>
+            ${d.notes ? `<div class="p-2 rounded bg-bg-surface col-span-2"><p class="text-text-muted text-[10px]">Notes</p><p class="text-text-secondary">${d.notes}</p></div>` : ''}
+        </div>
+    `;
+    
+    const actions = document.getElementById('dealModalActions');
+    actions.innerHTML = '';
+    if (d.status === 'PENDING') {
+        actions.innerHTML = `<button onclick="confirmDeal('${d.id}'); closeDealModal();" class="btn-primary flex-1 py-2 rounded-lg text-xs font-semibold"><i class="fas fa-check mr-1"></i>Confirm</button><button onclick="cancelDeal('${d.id}'); closeDealModal();" class="btn-danger flex-1 py-2 rounded-lg text-xs font-semibold"><i class="fas fa-times mr-1"></i>Cancel</button>`;
+    } else if (d.status === 'CONFIRMED') {
+        actions.innerHTML = `<button onclick="settleDeal('${d.id}'); closeDealModal();" class="btn-primary flex-1 py-2 rounded-lg text-xs font-semibold"><i class="fas fa-check-double mr-1"></i>Settle</button>`;
+    } else {
+        actions.innerHTML = `<button onclick="closeDealModal()" class="w-full py-2 rounded-lg bg-bg-surface border border-bg-border text-xs text-text-secondary hover:text-text-primary transition">Close</button>`;
+    }
+    
+    document.getElementById('dealModal').classList.remove('hide');
+}
+
+function closeDealModal() { document.getElementById('dealModal').classList.add('hide'); }
+
+// ==================== POSITIONS & P&L ====================
+function renderPositions() {
+    const positions = {};
+    state.deals.forEach(d => {
+        if (d.status !== 'CONFIRMED' && d.status !== 'PENDING') return;
+        const ccy = d.pair.split('/')[0];
+        if (!positions[ccy]) positions[ccy] = { net: 0, buy: 0, sell: 0 };
+        if (d.direction === 'BUY') { positions[ccy].net += d.amount; positions[ccy].buy += d.amount; }
+        else { positions[ccy].net -= d.amount; positions[ccy].sell += d.amount; }
+    });
+    
+    const tbody = document.getElementById('positionsBody');
+    if (tbody) {
+        tbody.innerHTML = Object.entries(positions).map(([ccy, pos]) => {
+            const mid = getMid(ccy + '/TZS') || 1;
+            const tzsEquiv = pos.net * mid;
+            const mtm = state.deals.filter(d => (d.status === 'CONFIRMED' || d.status === 'PENDING') && d.pair.startsWith(ccy)).reduce((sum, d) => sum + calculateMTM(d), 0);
+            const stance = pos.net > 0 ? 'LONG' : pos.net < 0 ? 'SHORT' : 'FLAT';
+            const stanceColor = stance === 'LONG' ? 'text-accent-green' : stance === 'SHORT' ? 'text-accent-red' : 'text-text-muted';
+            return `<tr class="deal-row border-b border-bg-border/50">
+                <td class="py-2 px-3 font-semibold">${ccy}</td>
+                <td class="py-2 px-3 text-right font-mono ${pos.net >= 0 ? 'text-accent-green' : 'text-accent-red'}">${pos.net >= 0 ? '+' : ''}${formatNumber(Math.abs(pos.net))}</td>
+                <td class="py-2 px-3 text-right font-mono">TZS ${formatNumber(tzsEquiv)}</td>
+                <td class="py-2 px-3 text-right font-mono text-text-muted">${mid.toFixed(2)}</td>
+                <td class="py-2 px-3 text-right font-mono ${mtm >= 0 ? 'text-accent-green' : 'text-accent-red'}">TZS ${formatNumber(mtm)}</td>
+                <td class="py-2 px-3"><span class="font-semibold ${stanceColor}">${stance}</span></td>
+            </tr>`;
+        }).join('');
+    }
+    
+    const totalSpread = state.deals.reduce((sum, d) => sum + (d.spreadIncome || 0), 0);
+    const totalMTM = state.deals.reduce((sum, d) => sum + calculateMTM(d), 0);
+    const grandTotal = totalSpread + totalMTM;
+    
+    const totalSpreadEl = document.getElementById('totalSpread');
+    if (totalSpreadEl) totalSpreadEl.textContent = 'TZS ' + formatNumber(totalSpread);
+    const totalMTMEl = document.getElementById('totalMTM');
+    if (totalMTMEl) totalMTMEl.textContent = 'TZS ' + formatNumber(totalMTM);
+    const grandTotalEl = document.getElementById('grandTotal');
+    if (grandTotalEl) {
+        grandTotalEl.textContent = 'TZS ' + formatNumber(grandTotal);
+        grandTotalEl.className = 'text-2xl font-bold font-mono ' + (grandTotal >= 0 ? 'text-accent-green' : 'text-accent-red');
+    }
+    
+    renderPnLChart();
+}
+
+function renderPnLChart() {
+    const ctx = document.getElementById('pnlChart');
+    if (!ctx) return;
+    if (state.charts.pnl) state.charts.pnl.destroy();
+    
+    const pairPnL = {};
+    state.deals.forEach(d => {
+        if (!pairPnL[d.pair]) pairPnL[d.pair] = 0;
+        pairPnL[d.pair] += (d.spreadIncome || 0) + calculateMTM(d);
+    });
+    
+    state.charts.pnl = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(pairPnL),
+            datasets: [{
+                label: 'Total P&L (TZS)',
+                data: Object.values(pairPnL),
+                backgroundColor: Object.values(pairPnL).map(v => v >= 0 ? 'rgba(0, 229, 160, 0.7)' : 'rgba(239, 68, 68, 0.7)'),
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: 'rgba(30, 33, 48, 0.5)' }, ticks: { color: '#8b8f9e', font: { family: 'JetBrains Mono' } } },
+                x: { grid: { display: false }, ticks: { color: '#8b8f9e' } }
+            }
+        }
+    });
+}
+
+// ==================== REVALUATION ====================
+function renderRevaluation() {
+    const openDeals = state.deals.filter(d => d.status === 'CONFIRMED' || d.status === 'PENDING').length;
+    const totalMTM = state.deals.reduce((sum, d) => sum + calculateMTM(d), 0);
+    document.getElementById('revOpenDeals').textContent = openDeals;
+    document.getElementById('revTotalMTM').textContent = 'TZS ' + formatNumber(totalMTM);
+    document.getElementById('revResult').classList.add('hide');
+}
+
+function runRevaluation() {
+    state.deals.forEach(d => {
+        if (d.status === 'CONFIRMED' || d.status === 'PENDING') {
+            const mtm = calculateMTM(d);
+            logAudit('REVALUATION', d.id, `MTM revalued: TZS ${formatNumber(mtm)}`);
+        }
+    });
+    document.getElementById('revResult').classList.remove('hide');
+    document.getElementById('revDetail').textContent = `GL entries posted for ${state.deals.filter(d => d.status === 'CONFIRMED' || d.status === 'PENDING').length} open deals. Audit trail updated.`;
+    showToast('EOD Revaluation complete', 'success');
+    renderPositions();
+}
+
+// ==================== LIMITS ====================
+function renderLimits() {
+    const dealerLimits = document.getElementById('dealerLimits');
+    if (dealerLimits) {
+        dealerLimits.innerHTML = [
+            { name: 'J. Mushi (Dealer)', used: 65, limit: 100, unit: 'M USD/day' },
+            { name: 'A. Kimaro (Dealer)', used: 42, limit: 80, unit: 'M USD/day' },
+            { name: 'P. Ochieng (Dealer)', used: 28, limit: 60, unit: 'M USD/day' }
+        ].map(l => {
+            const pct = (l.used / l.limit) * 100;
+            const color = pct > 90 ? 'bg-accent-red' : pct > 70 ? 'bg-accent-gold' : 'bg-accent-green';
+            return `<div><div class="flex justify-between text-xs mb-1"><span>${l.name}</span><span class="font-mono">${l.used}/${l.limit} ${l.unit}</span></div><div class="h-1.5 bg-bg-surface rounded-full overflow-hidden"><div class="h-full ${color} rounded-full" style="width: ${pct}%"></div></div></div>`;
+        }).join('');
+    }
+    
+    const cpLimits = document.getElementById('cpLimits');
+    if (cpLimits) {
+        cpLimits.innerHTML = [
+            { name: 'CRDB Bank', used: 450, limit: 500, unit: 'M TZS' },
+            { name: 'NMB Bank', used: 320, limit: 400, unit: 'M TZS' },
+            { name: 'Stanbic Bank', used: 180, limit: 300, unit: 'M TZS' },
+            { name: 'Diamond Trust', used: 95, limit: 100, unit: 'M TZS' }
+        ].map(l => {
+            const pct = (l.used / l.limit) * 100;
+            const color = pct > 90 ? 'bg-accent-red' : pct > 70 ? 'bg-accent-gold' : 'bg-accent-green';
+            return `<div><div class="flex justify-between text-xs mb-1"><span>${l.name}</span><span class="font-mono">${l.used}/${l.limit} ${l.unit}</span></div><div class="h-1.5 bg-bg-surface rounded-full overflow-hidden"><div class="h-full ${color} rounded-full" style="width: ${pct}%"></div></div></div>`;
+        }).join('');
+    }
+}
+
+// ==================== CONFIRMATIONS ====================
+function renderConfirmations() {
+    const tbody = document.getElementById('confirmationsBody');
+    if (!tbody) return;
+    const confirmed = state.deals.filter(d => d.status === 'CONFIRMED' || d.status === 'SETTLED');
+    tbody.innerHTML = confirmed.map((d, i) => {
+        const swiftRef = `SWIFT-${d.id.replace(/-/g, '')}`;
+        const statuses = ['MATCHED', 'MATCHED', 'MATCHED', 'PENDING', 'MATCHED'];
+        const status = statuses[i % statuses.length];
+        return `<tr class="deal-row border-b border-bg-border/50">
+            <td class="py-2 px-3 font-mono">${d.id}</td>
+            <td class="py-2 px-3">${d.type.toUpperCase()}</td>
+            <td class="py-2 px-3">${d.counterparty}</td>
+            <td class="py-2 px-3 font-mono text-text-secondary">${swiftRef}</td>
+            <td class="py-2 px-3"><span class="status-pill ${status === 'MATCHED' ? 'bg-emerald-900/30 text-accent-green border-emerald-900/30' : 'bg-amber-900/30 text-accent-gold border-amber-900/30'}">${status}</span></td>
+            <td class="py-2 px-3 text-text-muted">${d.tradeDate}</td>
+            <td class="py-2 px-3 text-text-muted">${status === 'MATCHED' ? d.tradeDate : '-'}</td>
+            <td class="py-2 px-3 text-center"><button class="text-accent-blue hover:text-white"><i class="fas fa-eye"></i></button></td>
+        </tr>`;
+    }).join('');
+}
+
+// ==================== AUDIT ====================
+function logAudit(action, dealId, details) {
+    state.auditLog.unshift({
+        timestamp: new Date().toISOString(),
+        user: state.currentUser || 'System',
+        action, dealId, details,
+        ip: '192.168.1.' + Math.floor(Math.random() * 255),
+        hash: '0x' + Array.from({length: 16}, () => Math.floor(Math.random() * 16).toString(16)).join('')
+    });
+}
+
+function renderAudit() {
+    const tbody = document.getElementById('auditBody');
+    if (!tbody) return;
+    tbody.innerHTML = state.auditLog.slice(0, 50).map(a => `<tr class="deal-row border-b border-bg-border/50">
+        <td class="py-2 px-3 font-mono text-text-secondary">${new Date(a.timestamp).toLocaleTimeString()}</td>
+        <td class="py-2 px-3">${a.user}</td>
+        <td class="py-2 px-3"><span class="text-[10px] px-1.5 py-0.5 rounded bg-bg-surface border border-bg-border">${a.action}</span></td>
+        <td class="py-2 px-3 font-mono text-text-secondary">${a.dealId || '-'}</td>
+        <td class="py-2 px-3 text-text-secondary">${a.details}</td>
+        <td class="py-2 px-3 font-mono text-text-muted">${a.ip}</td>
+        <td class="py-2 px-3 font-mono text-[10px] text-accent-green">${a.hash}</td>
+    </tr>`).join('');
+}
+
+// ==================== UTILITIES ====================
+function formatNumber(n) {
+    if (n === undefined || n === null) return '0.00';
+    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const colors = { success: 'border-accent-green text-accent-green', error: 'border-accent-red text-accent-red', warning: 'border-accent-gold text-accent-gold', info: 'border-accent-blue text-accent-blue' };
+    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+    const toast = document.createElement('div');
+    toast.className = `toast glass px-4 py-3 rounded-lg border-l-2 ${colors[type]} flex items-center gap-3 min-w-[280px]`;
+    toast.innerHTML = `<i class="fas ${icons[type]}"></i><span class="text-xs font-medium">${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
+}
+
+function initClock() {
+    const update = () => {
+        const el = document.getElementById('clock');
+        if (el) el.textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+    };
+    update();
+    setInterval(update, 1000);
+}
+
+function startRateSimulation() {
+    setInterval(() => {
+        Object.keys(state.rates).forEach(pair => {
+            const r = state.rates[pair];
+            const change = (Math.random() - 0.5) * r.mid * 0.0005;
+            r.mid += change;
+            r.bid = r.mid - (r.spread / 10000 * r.mid);
+            r.ask = r.mid + (r.spread / 10000 * r.mid);
+            r.change = change;
+        });
+        if (state.currentView === 'dashboard') renderRateTable();
+        if (state.currentView === 'rates') renderRateBoard();
+        updateTicketPreview();
+        updateQuickPreview();
+    }, 3000);
+}
+
+function updateQuickPreview() {
+    const pair = document.getElementById('quickPair')?.value || 'USD/TZS';
+    const dir = document.getElementById('quickDir')?.value || 'BUY';
+    const amount = parseFloat(document.getElementById('quickAmount')?.value) || 0;
+    const dealRate = parseFloat(document.getElementById('quickRate')?.value) || 0;
+    const mid = getMid(pair);
+    const spread = calculateSpreadIncome(pair, dir, amount, dealRate, mid);
+    const el = document.getElementById('quickSpread');
+    if (el) {
+        el.textContent = 'TZS ' + formatNumber(spread);
+        el.className = 'font-mono font-semibold ' + (spread >= 0 ? 'text-accent-green' : 'text-accent-red');
+    }
+}
+
+function renderAll() {
+    renderRateTable();
+    renderRecentDeals();
+    renderBlotter();
+    if (state.currentView === 'positions') renderPositions();
+    if (state.currentView === 'rates') renderRateBoard();
+    if (state.currentView === 'limits') renderLimits();
+    if (state.currentView === 'audit') renderAudit();
+    if (state.currentView === 'confirmations') renderConfirmations();
+    if (state.currentView === 'revaluation') renderRevaluation();
+}
+
+function exportBlotter() {
+    const csv = 'Deal ID,Type,Pair,Direction,Amount,Deal Rate,Mid at Book,Spread Income,Counterparty,Dealer,Status,Trade Date,Value Date,Purpose\n' +
+        state.deals.map(d => `${d.id},${d.type},${d.pair},${d.direction},${d.amount},${d.dealRate},${d.midAtBook},${d.spreadIncome},${d.counterparty},${d.dealer},${d.status},${d.tradeDate},${d.valueDate},${d.purpose}`).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TMS_Blotter_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Blotter exported to CSV', 'success');
+}
+
+// Event listeners for ticket preview
+['ticketPair', 'ticketDir', 'ticketAmount', 'ticketRate'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateTicketPreview);
+});
+
+['quickPair', 'quickDir', 'quickAmount', 'quickRate'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateQuickPreview);
+});
+
+// Set default dates
+document.getElementById('ticketTradeDate').value = new Date().toISOString().split('T')[0];
+const vDate = new Date(); vDate.setDate(vDate.getDate() + 2);
+document.getElementById('ticketValueDate').value = vDate.toISOString().split('T')[0];
+
+</script>
+</body>
+</html>
